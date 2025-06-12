@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FaUpload } from 'react-icons/fa';
 import './NewTaskForm.css';
 
@@ -20,9 +20,64 @@ function NewTask() {
     declaracao: null,
   });
   
+  // --- CORRECTED STATE ---
+  // 1. Initialize state for each dropdown with an empty array [].
+  const [activityTypes, setActivityTypes] = useState([]);
+  const [participationTypes, setParticipationTypes] = useState([]);
   const [fileName, setFileName] = useState('');
 
-  // Função para mudanças nos inputs
+  // --- CORRECTED FETCH FUNCTIONS ---
+  // 2. Make fetch functions return the formatted data array.
+  const fetch_activity_types = async () => {
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Tipo_Atividade');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      // Format data into a { value, label } structure
+      const options = data.map(item => ({
+        value: item.nome.toLowerCase().replace(/_/g, '-'),
+        label: item.nome.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())
+      }));
+      return options; // <-- Return the data
+    } catch (error) {
+      console.error("Failed to fetch activity types:", error);
+      return []; // Return empty array on error
+    }
+  };
+/*em andamento
+  const fetch_participation_types = async () => {
+    try {
+      const response = await fetch(import.meta.env.VITE_API_URL + '/api/Tipo_Participacao');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      const options = data.map(item => ({
+        value: item.nome.toLowerCase().replace(/_/g, '-'),
+        label: item.nome.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())
+      }));
+      return options; // <-- Return the data
+    } catch (error) {
+      console.error("Failed to fetch participation types:", error);
+      return []; // Return empty array on error
+    }
+  };
+*/
+
+  useEffect(() => {
+    const loadOptions = async () => {
+      const fetchedActivityTypes = await fetch_activity_types();
+      setActivityTypes(fetchedActivityTypes);
+
+      const fetchedParticipationTypes = await fetch_participation_types();
+      setParticipationTypes(fetchedParticipationTypes);
+    };
+
+    loadOptions();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prevState => ({
@@ -31,7 +86,6 @@ function NewTask() {
     }));
   };
 
-  // Função a seleção do arquivo
   const handleFileChange = (e) => {
     if (e.target.files[0]) {
       setFormData(prevState => ({
@@ -42,7 +96,6 @@ function NewTask() {
     }
   };
 
-  // Função para submeter o formulário
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log("Dados do Formulário Submetido:", formData);
@@ -56,14 +109,16 @@ function NewTask() {
 
       <form onSubmit={handleSubmit}>
         <div className="form-grid">
-          {/* Tipo de atividade */}
           <div className="form-group">
             <label htmlFor="tipoAtividade">Tipo de Atividade *</label>
             <select id="tipoAtividade" name="tipoAtividade" value={formData.tipoAtividade} onChange={handleChange} required>
               <option value="" disabled>Selecione o tipo</option>
-              <option value="curso">Curso</option>
-              <option value="palestra">Palestra</option>
-              <option value="workshop">Workshop</option>
+              {/* --- 4. Map over the correct state variable --- */}
+              {activityTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -71,13 +126,17 @@ function NewTask() {
             <label htmlFor="tipoParticipacao">Tipo de Participação *</label>
             <select id="tipoParticipacao" name="tipoParticipacao" value={formData.tipoParticipacao} onChange={handleChange} required>
               <option value="" disabled>Selecione a participação</option>
-              <option value="ouvinte">Ouvinte</option>
-              <option value="palestrante">Palestrante</option>
-              <option value="organizador">Organizador</option>
+              {/* --- Map over the second state variable --- */}
+              {participationTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
           </div>
+          
+          {/* ... (rest of your form remains the same) ... */}
 
-          {/* Informaçoes da atividade */}
           <div className="form-group full-width">
             <label htmlFor="titulo">Título da Atividade *</label>
             <input type="text" id="titulo" name="titulo" value={formData.titulo} onChange={handleChange} placeholder="Digite o título da atividade" required />
@@ -140,7 +199,6 @@ function NewTask() {
             </select>
           </div>
 
-          {/* Upload */}
           <div className="form-group full-width">
             <label>Declaração de Participação *</label>
             <label htmlFor="declaracao" className="file-upload-area">

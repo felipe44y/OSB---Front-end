@@ -1,10 +1,15 @@
-import NewTask from "./components/NewTaskForm/NewTaskForm";
-import HoursSummary from "./components/HoursSummary/HoursSummary";
 
+import HoursSummary from "./components/HoursSummary/HoursSummary";
+import NewTask from "./components/NewTaskForm/NewTaskForm";
 const App = () => {
   return (
-    <div className="app-container">
+    <div className="test">
+      <div className="app-container">
       <HoursSummary />
+    </div>
+    <div className="app-container">
+      <NewTask />
+    </div>
     </div>
   );
 };
